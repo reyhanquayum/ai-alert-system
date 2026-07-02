@@ -1,0 +1,29 @@
+# ai-alert-system configuration. Every field is optional; these are the defaults.
+# Secrets come from the environment, never this file:
+#   ANTHROPIC_API_KEY  -> enables the real Claude backend (mock otherwise)
+#   SLACK_WEBHOOK_URL  -> enables real Slack posts (dry-run log otherwise)
+
+[server]
+bind = "127.0.0.1:8080"
+
+[llm]
+# "auto": real Claude API when ANTHROPIC_API_KEY is set, deterministic mock otherwise.
+mode = "auto"          # auto | real | mock
+model = "claude-opus-4-8"
+max_tokens = 8000
+
+[slack]
+# webhook_url = "https://hooks.slack.com/services/..."   # or set SLACK_WEBHOOK_URL
+
+[repo]
+# Git repository to scan for the suspect commit (your deployed service's repo).
+path = "."
+lookback_hours = 48
+max_commits = 30
+
+[runbooks]
+dir = "runbooks"
+
+[storage]
+incidents_dir = "data/incidents"
+postmortems_dir = "postmortems"

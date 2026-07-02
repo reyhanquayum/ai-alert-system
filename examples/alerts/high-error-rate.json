@@ -1,0 +1,12 @@
+{
+  "name": "CheckoutHighErrorRate",
+  "severity": "critical",
+  "service": "checkout-api",
+  "summary": "5xx error rate on checkout-api is above 20% for 5 minutes",
+  "description": "HTTP 500/503 responses from checkout-api exceeded the 20% threshold. Errors mention retry storms and upstream timeouts on the payment path.",
+  "labels": {
+    "team": "payments",
+    "region": "us-east-1",
+    "env": "production"
+  }
+}

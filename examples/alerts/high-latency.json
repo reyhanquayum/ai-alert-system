@@ -1,0 +1,12 @@
+{
+  "name": "SearchHighLatency",
+  "severity": "warning",
+  "service": "search-api",
+  "summary": "p95 latency on search-api above 1.5s for 10 minutes",
+  "description": "Search query latency degraded after the last deploy; cache hit rate dropped from 92% to 61%.",
+  "labels": {
+    "team": "discovery",
+    "region": "eu-west-1",
+    "env": "production"
+  }
+}

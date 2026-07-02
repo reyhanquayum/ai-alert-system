@@ -1,0 +1,19 @@
+{
+  "receiver": "ai-alert-system",
+  "status": "firing",
+  "alerts": [
+    {
+      "labels": {
+        "alertname": "DBConnectionPoolExhausted",
+        "severity": "critical",
+        "service": "orders-db",
+        "team": "core-services"
+      },
+      "annotations": {
+        "summary": "Database connection pool for orders-db is saturated",
+        "description": "Active connections have been at the pool maximum for 10 minutes; new queries are queueing and timing out."
+      },
+      "startsAt": "2026-07-01T09:42:00Z"
+    }
+  ]
+}
