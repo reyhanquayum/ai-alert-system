@@ -35,7 +35,10 @@ impl Alert {
     /// - Generic: a single object (or array of objects) matching `Alert`'s own shape.
     pub fn from_payload(payload: &Value) -> Result<Vec<Alert>> {
         if let Some(alerts) = payload.get("alerts").and_then(|a| a.as_array()) {
-            let parsed: Vec<Alert> = alerts.iter().map(Self::from_alertmanager).collect::<Result<_>>()?;
+            let parsed: Vec<Alert> = alerts
+                .iter()
+                .map(Self::from_alertmanager)
+                .collect::<Result<_>>()?;
             if parsed.is_empty() {
                 bail!("alertmanager payload contained no alerts");
             }
@@ -66,7 +69,10 @@ impl Alert {
             .get("alertname")
             .cloned()
             .unwrap_or_else(|| "UnnamedAlert".into());
-        let severity = labels.get("severity").cloned().unwrap_or_else(default_severity);
+        let severity = labels
+            .get("severity")
+            .cloned()
+            .unwrap_or_else(default_severity);
         let service = labels
             .get("service")
             .or_else(|| labels.get("job"))

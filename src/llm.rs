@@ -93,7 +93,10 @@ impl Llm {
             .context("sending request to the Claude API")?;
 
         let status = resp.status();
-        let raw: Value = resp.json().await.context("reading Claude API response body")?;
+        let raw: Value = resp
+            .json()
+            .await
+            .context("reading Claude API response body")?;
         if !status.is_success() {
             let msg = raw
                 .pointer("/error/message")
@@ -114,7 +117,10 @@ impl Llm {
             .collect::<Vec<_>>()
             .join("\n");
         if text.trim().is_empty() {
-            bail!("Claude returned an empty response (stop_reason: {:?})", parsed.stop_reason);
+            bail!(
+                "Claude returned an empty response (stop_reason: {:?})",
+                parsed.stop_reason
+            );
         }
         Ok(text)
     }
@@ -136,8 +142,12 @@ struct ContentBlock {
 
 /// Pull the first top-level JSON object out of a model reply (tolerates code fences / prose).
 fn extract_json(text: &str) -> Result<Value> {
-    let start = text.find('{').ok_or_else(|| anyhow!("no JSON object in reply"))?;
-    let end = text.rfind('}').ok_or_else(|| anyhow!("no JSON object in reply"))?;
+    let start = text
+        .find('{')
+        .ok_or_else(|| anyhow!("no JSON object in reply"))?;
+    let end = text
+        .rfind('}')
+        .ok_or_else(|| anyhow!("no JSON object in reply"))?;
     Ok(serde_json::from_str(&text[start..=end])?)
 }
 
@@ -248,7 +258,11 @@ mod mock {
                     c["message"].as_str().unwrap_or(""),
                     c["files"]
                         .as_array()
-                        .map(|f| f.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>().join(" "))
+                        .map(|f| f
+                            .iter()
+                            .filter_map(|v| v.as_str())
+                            .collect::<Vec<_>>()
+                            .join(" "))
                         .unwrap_or_default()
                 );
                 overlap(&tokenize(&text), &alert_tokens)
@@ -260,12 +274,22 @@ mod mock {
                 best["message"].as_str().unwrap_or(""),
                 best["files"]
                     .as_array()
-                    .map(|f| f.iter().filter_map(|v| v.as_str()).collect::<Vec<_>>().join(" "))
+                    .map(|f| f
+                        .iter()
+                        .filter_map(|v| v.as_str())
+                        .collect::<Vec<_>>()
+                        .join(" "))
                     .unwrap_or_default()
             );
             overlap(&tokenize(&text), &alert_tokens)
         };
-        let confidence = if score >= 3 { "high" } else if score >= 1 { "medium" } else { "low" };
+        let confidence = if score >= 3 {
+            "high"
+        } else if score >= 1 {
+            "medium"
+        } else {
+            "low"
+        };
         Ok(json!({
             "hash": best["hash"],
             "confidence": confidence,
@@ -329,18 +353,29 @@ mod mock {
         let severity = context["alert"]["severity"].as_str().unwrap_or("warning");
         let service = context["alert"]["service"].as_str().unwrap_or("unknown");
         let error_rate = context["metrics"]["error_rate_pct"].as_f64().unwrap_or(0.0);
-        let rpm = context["metrics"]["requests_per_min"].as_f64().unwrap_or(0.0);
+        let rpm = context["metrics"]["requests_per_min"]
+            .as_f64()
+            .unwrap_or(0.0);
         let failing_per_min = rpm * error_rate / 100.0;
         let (assessment, users) = match severity {
             "critical" => (
                 format!("High — {error_rate:.0}% of requests to {service} are failing"),
-                format!("~{:.0}k affected requests/hour", failing_per_min * 60.0 / 1000.0),
+                format!(
+                    "~{:.0}k affected requests/hour",
+                    failing_per_min * 60.0 / 1000.0
+                ),
             ),
             "warning" => (
                 format!("Moderate — degraded behavior on {service}"),
-                format!("~{:.1}k affected requests/hour", failing_per_min * 60.0 / 1000.0),
+                format!(
+                    "~{:.1}k affected requests/hour",
+                    failing_per_min * 60.0 / 1000.0
+                ),
             ),
-            _ => ("Low — no clear user-facing impact yet".to_string(), "minimal".to_string()),
+            _ => (
+                "Low — no clear user-facing impact yet".to_string(),
+                "minimal".to_string(),
+            ),
         };
         Ok(json!({
             "severity_assessment": assessment,
@@ -375,7 +410,10 @@ mod mock {
         if let Some(sc) = context["incident"]["suspect_commit"].as_object() {
             out.push_str(&format!(
                 "*Likely cause:* `{}` — {} ({}) — confidence: {}\n> {}\n",
-                sc.get("hash").and_then(|v| v.as_str()).map(|h| &h[..h.len().min(10)]).unwrap_or("?"),
+                sc.get("hash")
+                    .and_then(|v| v.as_str())
+                    .map(|h| &h[..h.len().min(10)])
+                    .unwrap_or("?"),
                 sc.get("message").and_then(|v| v.as_str()).unwrap_or("?"),
                 sc.get("author").and_then(|v| v.as_str()).unwrap_or("?"),
                 sc.get("confidence").and_then(|v| v.as_str()).unwrap_or("?"),
@@ -385,8 +423,12 @@ mod mock {
         if let Some(imp) = context["incident"]["impact"].as_object() {
             out.push_str(&format!(
                 "*Impact:* {} ({})\n",
-                imp.get("severity_assessment").and_then(|v| v.as_str()).unwrap_or("?"),
-                imp.get("affected_users").and_then(|v| v.as_str()).unwrap_or("?")
+                imp.get("severity_assessment")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("?"),
+                imp.get("affected_users")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("?")
             ));
         }
         if let Some(rb) = context["incident"]["runbook"].as_object() {
@@ -438,8 +480,12 @@ mod mock {
             .map(|i| {
                 format!(
                     "{} — {}. {}",
-                    i.get("severity_assessment").and_then(|v| v.as_str()).unwrap_or("?"),
-                    i.get("affected_users").and_then(|v| v.as_str()).unwrap_or("?"),
+                    i.get("severity_assessment")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("?"),
+                    i.get("affected_users")
+                        .and_then(|v| v.as_str())
+                        .unwrap_or("?"),
                     i.get("narrative").and_then(|v| v.as_str()).unwrap_or("")
                 )
             })

@@ -24,11 +24,10 @@ pub struct Pipeline {
 impl Pipeline {
     pub fn new(cfg: Config) -> Result<Self> {
         let llm = if cfg.llm_use_real() {
-            let key = cfg
-                .llm
-                .api_key
-                .clone()
-                .ok_or_else(|| anyhow!("llm mode is 'real' but ANTHROPIC_API_KEY is not set"))?;
+            let key =
+                cfg.llm.api_key.clone().ok_or_else(|| {
+                    anyhow!("llm mode is 'real' but ANTHROPIC_API_KEY is not set")
+                })?;
             info!(model = %cfg.llm.model, "LLM backend: Claude API");
             Llm::real(key, cfg.llm.model.clone(), cfg.llm.max_tokens)
         } else {
@@ -70,7 +69,10 @@ impl Pipeline {
 
         match suspect {
             Ok(Some(sc)) => {
-                incident.log(format!("suspect commit identified: {} ({})", sc.hash, sc.confidence));
+                incident.log(format!(
+                    "suspect commit identified: {} ({})",
+                    sc.hash, sc.confidence
+                ));
                 incident.suspect_commit = Some(sc);
             }
             Ok(None) => incident.log("no plausible suspect commit found"),
@@ -100,14 +102,14 @@ impl Pipeline {
             }
         }
 
-        match self.llm.generate(Task::ComposeBrief, &json!({ "incident": incident })).await {
+        match self
+            .llm
+            .generate(Task::ComposeBrief, &json!({ "incident": incident }))
+            .await
+        {
             Ok(brief) => {
-                if let Err(e) = slack::post(
-                    &self.http,
-                    self.cfg.slack.webhook_url.as_deref(),
-                    &brief,
-                )
-                .await
+                if let Err(e) =
+                    slack::post(&self.http, self.cfg.slack.webhook_url.as_deref(), &brief).await
                 {
                     error!(id = %incident.id, "Slack post failed: {e:#}");
                     incident.log(format!("Slack post failed: {e}"));
@@ -129,9 +131,12 @@ impl Pipeline {
 
     async fn find_suspect_commit(&self, alert: &Alert) -> Result<Option<SuspectCommit>> {
         let repo = Path::new(&self.cfg.repo.path);
-        let commits =
-            commits::recent_commits(repo, self.cfg.repo.lookback_hours, self.cfg.repo.max_commits)
-                .await?;
+        let commits = commits::recent_commits(
+            repo,
+            self.cfg.repo.lookback_hours,
+            self.cfg.repo.max_commits,
+        )
+        .await?;
         if commits.is_empty() {
             return Ok(None);
         }
@@ -149,7 +154,10 @@ impl Pipeline {
             author: commit.author.clone(),
             message: commit.message.clone(),
             confidence: verdict["confidence"].as_str().unwrap_or("low").to_string(),
-            reasoning: verdict["reasoning"].as_str().unwrap_or_default().to_string(),
+            reasoning: verdict["reasoning"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
         }))
     }
 
@@ -171,12 +179,19 @@ impl Pipeline {
             .ok_or_else(|| anyhow!("model chose unknown runbook {path}"))?;
         let key_steps = verdict["key_steps"]
             .as_array()
-            .map(|a| a.iter().filter_map(|v| v.as_str().map(String::from)).collect())
+            .map(|a| {
+                a.iter()
+                    .filter_map(|v| v.as_str().map(String::from))
+                    .collect()
+            })
             .unwrap_or_default();
         Ok(RunbookMatch {
             path: chosen.path.clone(),
             title: chosen.title.clone(),
-            reasoning: verdict["reasoning"].as_str().unwrap_or_default().to_string(),
+            reasoning: verdict["reasoning"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
             key_steps,
         })
     }
@@ -190,8 +205,14 @@ impl Pipeline {
                 .as_str()
                 .unwrap_or("unknown")
                 .to_string(),
-            affected_users: verdict["affected_users"].as_str().unwrap_or("unknown").to_string(),
-            narrative: verdict["narrative"].as_str().unwrap_or_default().to_string(),
+            affected_users: verdict["affected_users"]
+                .as_str()
+                .unwrap_or("unknown")
+                .to_string(),
+            narrative: verdict["narrative"]
+                .as_str()
+                .unwrap_or_default()
+                .to_string(),
         })
     }
 
@@ -222,7 +243,10 @@ impl Pipeline {
             ":white_check_mark: *{} resolved* — {}\nPostmortem: `{}`",
             incident.id,
             note,
-            incident.postmortem_path.as_deref().unwrap_or("(generation failed)")
+            incident
+                .postmortem_path
+                .as_deref()
+                .unwrap_or("(generation failed)")
         );
         if let Err(e) = slack::post(&self.http, self.cfg.slack.webhook_url.as_deref(), &msg).await {
             warn!(id = %incident.id, "Slack resolution post failed: {e:#}");

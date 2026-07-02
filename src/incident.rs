@@ -84,7 +84,10 @@ impl Incident {
     }
 
     pub fn log(&mut self, event: impl Into<String>) {
-        self.timeline.push(TimelineEntry { at: Utc::now(), event: event.into() });
+        self.timeline.push(TimelineEntry {
+            at: Utc::now(),
+            event: event.into(),
+        });
     }
 }
 
@@ -131,7 +134,7 @@ impl IncidentStore {
                 }
             }
         }
-        incidents.sort_by(|a, b| b.created_at.cmp(&a.created_at));
+        incidents.sort_by_key(|i| std::cmp::Reverse(i.created_at));
         Ok(incidents)
     }
 }

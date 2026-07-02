@@ -22,9 +22,18 @@ use serde_json::{json, Value};
 use tracing::{error, info};
 
 const SAMPLE_ALERTS: &[(&str, &str)] = &[
-    ("high-error-rate", include_str!("../examples/alerts/high-error-rate.json")),
-    ("db-connections", include_str!("../examples/alerts/db-connections.json")),
-    ("high-latency", include_str!("../examples/alerts/high-latency.json")),
+    (
+        "high-error-rate",
+        include_str!("../examples/alerts/high-error-rate.json"),
+    ),
+    (
+        "db-connections",
+        include_str!("../examples/alerts/db-connections.json"),
+    ),
+    (
+        "high-latency",
+        include_str!("../examples/alerts/high-latency.json"),
+    ),
 ];
 
 #[derive(Parser)]
@@ -70,8 +79,7 @@ enum Cmd {
 async fn main() -> Result<()> {
     tracing_subscriber::fmt()
         .with_env_filter(
-            tracing_subscriber::EnvFilter::try_from_default_env()
-                .unwrap_or_else(|_| "info".into()),
+            tracing_subscriber::EnvFilter::try_from_default_env().unwrap_or_else(|_| "info".into()),
         )
         .init();
 
@@ -83,7 +91,12 @@ async fn main() -> Result<()> {
             let pipeline = Pipeline::new(cfg.clone())?;
             serve(cfg, pipeline).await
         }
-        Cmd::Simulate { sample, file, repo, resolve } => {
+        Cmd::Simulate {
+            sample,
+            file,
+            repo,
+            resolve,
+        } => {
             if let Some(repo) = repo {
                 cfg.repo.path = repo;
             }
@@ -96,7 +109,10 @@ async fn main() -> Result<()> {
             println!(
                 "resolved {} — postmortem: {}",
                 incident.id,
-                incident.postmortem_path.as_deref().unwrap_or("(generation failed)")
+                incident
+                    .postmortem_path
+                    .as_deref()
+                    .unwrap_or("(generation failed)")
             );
             Ok(())
         }
@@ -131,7 +147,11 @@ async fn simulate(
             .ok_or_else(|| {
                 anyhow!(
                     "unknown sample '{sample}' (available: {})",
-                    SAMPLE_ALERTS.iter().map(|(n, _)| *n).collect::<Vec<_>>().join(", ")
+                    SAMPLE_ALERTS
+                        .iter()
+                        .map(|(n, _)| *n)
+                        .collect::<Vec<_>>()
+                        .join(", ")
                 )
             })?,
     };

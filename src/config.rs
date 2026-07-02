@@ -112,7 +112,9 @@ fn default_postmortems_dir() -> String {
 
 impl Default for ServerConfig {
     fn default() -> Self {
-        Self { bind: default_bind() }
+        Self {
+            bind: default_bind(),
+        }
     }
 }
 impl Default for LlmConfig {
@@ -136,7 +138,9 @@ impl Default for RepoConfig {
 }
 impl Default for RunbooksConfig {
     fn default() -> Self {
-        Self { dir: default_runbooks_dir() }
+        Self {
+            dir: default_runbooks_dir(),
+        }
     }
 }
 impl Default for StorageConfig {
